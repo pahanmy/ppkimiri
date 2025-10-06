@@ -42,7 +42,6 @@
         const ClockIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="M12 6 L12 12 L16 14" /></svg>;
 
         // --- PANGKALAN DATA SIMULASI ---
-        // [DIUBAH SUAI] Status lalai kini "Dalam Proses"
         const fakeDatabase = [
             { id: 1, name: "ADAM BIN ABDULLAH", mykad: "180115101234", status: "Dalam Proses", applicationDate: "2025-10-05", parentName: "ABDULLAH BIN AHMAD", phone: "012-3456789", diagnosis: "Autism Spectrum Disorder (ASD)" },
             { id: 2, name: "NUR AMELIA BINTI KHAIRUL", mykad: "180320055678", status: "Dalam Proses", applicationDate: "2025-10-03", parentName: "KHAIRUL BIN ISMAIL", phone: "019-8765432", diagnosis: "Attention Deficit Hyperactivity Disorder (ADHD)" },
@@ -87,12 +86,11 @@
             const [applications, setApplications] = useState(fakeDatabase);
             const [showSuccess, setShowSuccess] = useState(false);
             const [successMessage, setSuccessMessage] = useState("");
-            // [DIUBAH SUAI] Keadaan awal untuk penapis
             const [filters, setFilters] = useState({
                 search: '',
                 month: new Date().getMonth() + 1,
                 year: new Date().getFullYear(),
-                status: 'Default View', // Pilihan lalai khas
+                status: 'Default View',
             });
             const [selectedApp, setSelectedApp] = useState(null);
 
@@ -112,7 +110,6 @@
                     const monthMatch = filters.month ? (appDate.getMonth() + 1) == filters.month : true;
                     const yearMatch = filters.year ? appDate.getFullYear() == filters.year : true;
                     
-                    // [BARU] Logik penapisan status yang dipertingkatkan
                     let statusMatch = false;
                     if (filters.status === 'Default View') {
                         statusMatch = ['Dalam Proses', 'Tidak Lengkap'].includes(app.status);
@@ -167,6 +164,7 @@
                     <div className="text-center mb-8">
                         <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Dashboard Admin Semakan & Permohonan</h1>
                         <p className="text-gray-500 mt-1">SPK/ PPKI Pejabat Pendidikan Daerah Miri, Sarawak</p>
+                        {/* [DIUBAH SUAI] Pautan href telah ditukar */}
                         <a href="/index.html" className="mt-4 inline-flex items-center gap-2 bg-white hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors border border-gray-200 shadow-sm"><HomeIcon className="w-5 h-5" /><span>Halaman Utama</span></a>
                     </div>
 
@@ -177,13 +175,11 @@
                             <div className="bg-orange-50 p-4 rounded-lg flex items-center gap-4 border border-orange-200"><div className="bg-orange-500 p-3 rounded-full text-white"><ClockIcon className="w-6 h-6"/></div><div><p className="text-gray-600">Perlu Tindakan</p><p className="text-2xl font-bold text-orange-900">{analysis.pending}</p></div></div>
                         </div>
 
-                        {/* [DIUBAH SUAI] Grid kini mempunyai 4 lajur untuk penapis */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                              <div>
                                 <label className="block text-sm font-medium text-gray-600 mb-1">Cari No. MyKid</label>
                                 <input type="text" name="search" placeholder="Cth: 180115101234" value={filters.search} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
                             </div>
-                            {/* [BARU] Penapis status */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-600 mb-1">Status Permohonan</label>
                                 <select name="status" value={filters.status} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
