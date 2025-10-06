@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semakan & Permohonan PPKI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles & Animations */
+        html { scroll-behavior: smooth; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-modal-pop { animation: modalPop 0.3s ease-out; }
+        @keyframes modalPop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .label-style { display: block; font-size: 0.875rem; font-weight: 500; color: #4b5563; }
+        .input-style { display: block; width: 100%; padding: 0.5rem 0.75rem; margin-top: 0.25rem; border: 1px solid #d1d5db; border-radius: 0.375rem; transition: all 0.2s; background-color: #ffffff; }
+        .input-style:focus { outline: 2px solid transparent; outline-offset: 2px; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+        .btn-primary { background-color: #2563eb; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: all 0.2s; }
+        .btn-primary:hover:not(:disabled) { background-color: #1d4ed8; }
+        .btn-primary:disabled { background-color: #9ca3af; cursor: not-allowed; }
+        .btn-secondary { background-color: #4b5563; color: white; font-weight: bold; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.2s; }
+        .btn-secondary:hover:not(:disabled) { background-color: #374151; }
+        .flex-container { display: flex; gap: 1rem; margin-top: 0.5rem; align-items: center; }
+        .form-legend { font-size: 1.125rem; font-weight: 600; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; margin-bottom: 1rem; width: 100%; color: #111827; }
+        .error-text { color: #ef4444; font-size: 0.75rem; margin-top: 0.25rem; }
+        
+        @media print {
+            body > *:not(.print-container) { display: none; }
+            .print-container, .print-container * { visibility: visible; }
+            .print-container { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; border: none; box-shadow: none; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-white flex flex-col items-center justify-center min-h-screen p-4 font-sans text-gray-800">
+
+    <!-- App Root Container -->
+    <div id="app">
+        <!-- Application Content Will Be Rendered Here by React -->
+    </div>
+
+    <!-- React and ReactDOM Scripts -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel Script for JSX Transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- IKON SVG ---
+        const PrinterIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>;
+        const XCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
+        const UserIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+        const HashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>;
+        const CheckCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+        const ClockIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
+        const FileCheckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m9 15 2 2 4-4"></path></svg>;
+        const HelpCircleIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
+        const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+        const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
+        const WhatsAppIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-white"><path d="M16.75 13.96c.25.13.43.2.5.28.07.08.15.38.18.87a1.43 1.43 0 0 1-.5 1.2c-.24.2-.6.38-1.13.52s-1.13.2-3.38-.62c-2.25-.82-3.83-2.4-3.96-2.58-.13-.18-.88-1.15-.88-2.18s.55-1.5.75-1.7c.2-.2.43-.25.6-.25s.3.05.43.05c.13.02.28.02.4.22.12.2.48.97.52 1.05.04.08.07.18.02.28s-.13.25-.28.43c-.15.18-.28.3-.4.43-.12.13-.25.28-.13.52s.43.9.95 1.58c.75.97 1.43 1.3 1.63 1.43.2.13.3.1.43-.05s.55-.65.7-1.1c.15-.45.3-1 .5-1.13s.43-.15.7-.02zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg>;
+        
+        // --- PANGKALAN DATA SIMULASI ---
+        const fakeDatabase = [
+            { name: "AHMAD ISKANDAR MIKAIL BIN ABDULLAH", mykad: "080708130099", status: "LULUS", detail: "Tahniah! Sila hadir ke Pejabat Pendidikan Daerah Miri, Sarawak untuk mengambil surat tawaran rasmi." },
+            { name: "SITI NURHALIZA BINTI KAMARUDDIN", mykad: "081024138842", status: "DALAM PROSES", detail: "Permohonan anda masih dalam penilaian. Sila semak semula dalam tempoh 1-2 minggu." },
+            { name: "MUHAMMAD ZULKARNAIN BIN JAAFAR", mykad: "080115085541", status: "TIDAK LULUS", detail: "Jangan risau, proses rayuan masih boleh dibuat. Sila rujuk pejabat untuk maklumat lanjut." },
+        ];
+
+        // --- FUNGSI BANTUAN ---
+        const formatMyKad = (value) => {
+            if (!value) return '';
+            const digitsOnly = value.replace(/\D/g, '');
+            if (digitsOnly.length <= 6) return digitsOnly;
+            if (digitsOnly.length <= 8) return `${digitsOnly.slice(0, 6)}-${digitsOnly.slice(6)}`;
+            return `${digitsOnly.slice(0, 6)}-${digitsOnly.slice(6, 8)}-${digitsOnly.slice(8, 12)}`;
+        };
+        
+        // --- BORANG PERMOHONAN PROFESIONAL (MULTI-STEP) ---
+        const ApplicationForm = ({ onClose }) => {
+            const [currentStep, setCurrentStep] = useState(1);
+            const [formData, setFormData] = useState({ mykad: '' });
+            const [errors, setErrors] = useState({});
+            const [calculatedAge, setCalculatedAge] = useState(null);
+
+            useEffect(() => {
+                const digitsOnly = formData.mykad.replace(/\D/g, '');
+                if (digitsOnly.length === 12) {
+                    const yearStr = digitsOnly.substring(0, 2);
+                    const monthStr = digitsOnly.substring(2, 4);
+                    const dayStr = digitsOnly.substring(4, 6);
+                    let year = parseInt(yearStr, 10);
+                    const currentCentury = Math.floor(new Date().getFullYear() / 100);
+                    year += (year + 1900 > new Date().getFullYear()) ? 1900 : 2000;
+                    
+                    const dob = new Date(year, parseInt(monthStr, 10) - 1, parseInt(dayStr, 10));
+                    if (dob && dob.getFullYear() === year && (dob.getMonth() + 1) === parseInt(monthStr, 10) && dob.getDate() === parseInt(dayStr, 10)) {
+                        const formattedDob = dob.toISOString().split('T')[0];
+                        let age = new Date().getFullYear() - dob.getFullYear();
+                        const m = new Date().getMonth() - dob.getMonth();
+                        if (m < 0 || (m === 0 && new Date().getDate() < dob.getDate())) age--;
+                        
+                        setCalculatedAge(age);
+                        setFormData(prev => ({ ...prev, dob: formattedDob }));
+                        if(errors.dob) setErrors(prev => ({...prev, dob: null}));
+                    } else {
+                         setCalculatedAge(null);
+                         setFormData(prev => ({...prev, dob: ''}));
+                    }
+                }
+            }, [formData.mykad]);
+
+            const handleChange = (e) => {
+                const { name, value, type, checked } = e.target;
+                setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+                if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
+            };
+            
+            const handleMyKadChange = (e) => {
+                const formatted = formatMyKad(e.target.value);
+                setFormData(prev => ({...prev, mykad: formatted}));
+                if (errors.mykad) setErrors(prev => ({...prev, mykad: null}));
+            }
+
+            const validateStep = () => {
+                const newErrors = {};
+                const requiredFields = {
+                    1: ['studentName', 'mykad', 'dob', 'gender', 'appliedSchool', 'eduLevel'],
+                    2: ['parentName', 'relationship', 'phone', 'email'],
+                    3: ['diagnosis', 'selfCare', 'allergies', 'specialAids', 'tantrumFrequency', 'socialInteraction'],
+                    4: ['docOku', 'docMykid', 'docParentIc', 'agreeTerms']
+                };
+                
+                requiredFields[currentStep]?.forEach(field => {
+                    if (field === 'mykad' && formData.mykad.replace(/\D/g, '').length !== 12) {
+                        newErrors[field] = 'Sila masukkan 12 digit No. MyKad.';
+                    } else if (!formData[field]) {
+                        newErrors[field] = 'Medan ini diperlukan.';
+                    }
+                });
+                
+                if (currentStep === 4) {
+                    if (!formData.docOku || !formData.docMykid || !formData.docParentIc) newErrors.docs = 'Sila tandakan semua dokumen yang diperlukan.';
+                    if (!formData.agreeTerms) newErrors.agreeTerms = 'Anda mesti bersetuju dengan terma & syarat.';
+                }
+
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const nextStep = () => { if (validateStep()) setCurrentStep(prev => prev + 1); };
+            const prevStep = () => setCurrentStep(prev => prev - 1);
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (validateStep()) {
+                    const finalData = { ...formData, mykad: formData.mykad.replace(/\D/g, '') };
+                    console.log("Data Permohonan Dihantar:", finalData);
+                    alert("Permohonan anda telah berjaya dihantar.");
+                    onClose();
+                }
+            };
+
+            const requiredField = <span className="text-red-500">*</span>;
+            const steps = ["Pelajar", "Penjaga", "Kesihatan", "Pengesahan"];
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in no-print backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+                        <div className="p-6 border-b">
+                             <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Borang Permohonan PPKI</h2><button onClick={onClose} className="text-gray-500 hover:text-gray-800"><XIcon /></button></div>
+                             <div className="mt-4">
+                                <div className="flex items-center">
+                                    {steps.map((step, index) => (
+                                        <React.Fragment key={step}>
+                                            <div className="flex items-center">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${currentStep > index ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+                                                    {currentStep > index + 1 ? <CheckCircleIcon className="w-5 h-5"/> : index + 1}
+                                                </div>
+                                                <p className={`ml-2 font-semibold ${currentStep >= index + 1 ? 'text-blue-600' : 'text-gray-500'}`}>{step}</p>
+                                            </div>
+                                            {index < steps.length - 1 && <div className={`flex-auto border-t-2 transition-all duration-300 mx-4 ${currentStep > index + 1 ? 'border-blue-600' : 'border-gray-200'}`}></div>}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <form className="overflow-y-auto p-6 flex-grow">
+                            {currentStep === 1 && (
+                                <fieldset className="space-y-4 animate-fade-in">
+                                    <legend className="form-legend">Maklumat Pelajar</legend>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div><label className="label-style">Nama Penuh Pelajar {requiredField}</label><input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} required className={`input-style ${errors.studentName && 'border-red-500'}`} />{errors.studentName && <p className="error-text">{errors.studentName}</p>}</div>
+                                        <div><label className="label-style">Kad Pengenalan {requiredField}</label><input type="text" name="mykad" value={formData.mykad} maxLength="14" onChange={handleMyKadChange} required className={`input-style ${errors.mykad && 'border-red-500'}`} placeholder="Contoh: 080101-01-1234" />{errors.mykad && <p className="error-text">{errors.mykad}</p>}</div>
+                                        <div><label className="label-style">Tarikh Lahir Pelajar {requiredField}</label><input type="date" name="dob" value={formData.dob || ''} onChange={handleChange} required className={`input-style ${errors.dob && 'border-red-500'}`} readOnly />{calculatedAge !== null && <p className="text-sm text-green-600 mt-1 font-medium">Umur: {calculatedAge} tahun</p>}{errors.dob && <p className="error-text">{errors.dob}</p>}</div>
+                                        <div><label className="label-style">Jantina {requiredField}</label><div className="flex-container"><label><input type="radio" name="gender" value="Lelaki" checked={formData.gender === 'Lelaki'} onChange={handleChange}/> Lelaki</label><label><input type="radio" name="gender" value="Perempuan" onChange={handleChange}/> Perempuan</label></div>{errors.gender && <p className="error-text">{errors.gender}</p>}</div>
+                                        <div><label className="label-style">Sekolah Dipohon {requiredField}</label><select name="appliedSchool" value={formData.appliedSchool || ''} onChange={handleChange} required className={`input-style ${errors.appliedSchool && 'border-red-500'}`}><option value="">Pilih sekolah</option><option>SK MIRI</option><option>SMK LUTONG</option></select>{errors.appliedSchool && <p className="error-text">{errors.appliedSchool}</p>}</div>
+                                        <div><label className="label-style">Peringkat Persekolahan {requiredField}</label><input type="text" name="eduLevel" value={formData.eduLevel || ''} onChange={handleChange} required className={`input-style ${errors.eduLevel && 'border-red-500'}`} />{errors.eduLevel && <p className="error-text">{errors.eduLevel}</p>}</div>
+                                    </div>
+                                </fieldset>
+                            )}
+                            {currentStep === 2 && ( <fieldset className="space-y-4 animate-fade-in"><legend className="form-legend">Maklumat Ibu Bapa / Penjaga</legend><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="label-style">Nama Penuh {requiredField}</label><input type="text" name="parentName" value={formData.parentName || ''} onChange={handleChange} required className={`input-style ${errors.parentName && 'border-red-500'}`} />{errors.parentName && <p className="error-text">{errors.parentName}</p>}</div><div><label className="label-style">Hubungan {requiredField}</label><div className="flex-container"><label><input type="radio" name="relationship" value="Ibu" checked={formData.relationship === 'Ibu'} onChange={handleChange}/> Ibu</label><label><input type="radio" name="relationship" value="Bapa" onChange={handleChange}/> Bapa</label><label><input type="radio" name="relationship" value="Penjaga" onChange={handleChange}/> Penjaga</label></div>{errors.relationship && <p className="error-text">{errors.relationship}</p>}</div><div><label className="label-style">No. Telefon {requiredField}</label><input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required className={`input-style ${errors.phone && 'border-red-500'}`} />{errors.phone && <p className="error-text">{errors.phone}</p>}</div><div><label className="label-style">E-mel {requiredField}</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} required className={`input-style ${errors.email && 'border-red-500'}`} />{errors.email && <p className="error-text">{errors.email}</p>}</div></div></fieldset> )}
+                            {currentStep === 3 && ( <fieldset className="space-y-4 animate-fade-in"><legend className="form-legend">Maklumat Kesihatan & Keadaan Murid</legend><div><label className="label-style">Diagnosis/Keperluan Khas {requiredField}</label><textarea name="diagnosis" value={formData.diagnosis || ''} onChange={handleChange} required className={`input-style ${errors.diagnosis && 'border-red-500'}`}></textarea>{errors.diagnosis && <p className="error-text">{errors.diagnosis}</p>}</div><div><label className="label-style">Pengurusan Diri {requiredField}</label><select name="selfCare" value={formData.selfCare || ''} onChange={handleChange} required className={`input-style ${errors.selfCare && 'border-red-500'}`}><option value="">Pilih tahap</option><option>Boleh</option><option>Tidak Boleh</option><option>Sebahagian</option></select>{errors.selfCare && <p className="error-text">{errors.selfCare}</p>}</div><div><label className="label-style">Alahan/Masalah Kesihatan {requiredField}</label><textarea name="allergies" value={formData.allergies || ''} onChange={handleChange} required className={`input-style ${errors.allergies && 'border-red-500'}`}></textarea>{errors.allergies && <p className="error-text">{errors.allergies}</p>}</div><div><label className="label-style">Alat Bantuan Khas {requiredField}</label><textarea name="specialAids" value={formData.specialAids || ''} onChange={handleChange} required className={`input-style ${errors.specialAids && 'border-red-500'}`}></textarea>{errors.specialAids && <p className="error-text">{errors.specialAids}</p>}</div><div><label className="label-style">Kekerapan Tantrum {requiredField}</label><select name="tantrumFrequency" value={formData.tantrumFrequency || ''} onChange={handleChange} required className={`input-style ${errors.tantrumFrequency && 'border-red-500'}`}><option value="">Pilih kekerapan</option><option>Jarang</option><option>Kadang-kadang</option><option>Kerap</option></select>{errors.tantrumFrequency && <p className="error-text">{errors.tantrumFrequency}</p>}</div><div><label className="label-style">Interaksi Sosial {requiredField}</label><select name="socialInteraction" value={formData.socialInteraction || ''} onChange={handleChange} required className={`input-style ${errors.socialInteraction && 'border-red-500'}`}><option value="">Pilih tahap</option><option>Baik</option><option>Sederhana</option><option>Kurang</option></select>{errors.socialInteraction && <p className="error-text">{errors.socialInteraction}</p>}</div></fieldset> )}
+                            {currentStep === 4 && ( <fieldset className="space-y-4 animate-fade-in"><legend className="form-legend">Dokumen & Pengesahan</legend><div><p className="label-style">Dokumen Sokongan (Bawa semasa temuduga) {requiredField}</p>{errors.docs && <p className="error-text">{errors.docs}</p>}<div className="mt-2 space-y-2"><label className="flex items-center gap-2"><input type="checkbox" name="docOku" checked={!!formData.docOku} onChange={handleChange}/> Salinan Borang/Kad OKU</label><label className="flex items-center gap-2"><input type="checkbox" name="docMykid" checked={!!formData.docMykid} onChange={handleChange}/> Salinan Mykid/Sijil Lahir</label><label className="flex items-center gap-2"><input type="checkbox" name="docParentIc" checked={!!formData.docParentIc} onChange={handleChange}/> Salinan K/P Ibu/Bapa/Penjaga</label></div></div><div><label className="label-style">Maklumat Tambahan</label><textarea name="additionalInfo" value={formData.additionalInfo || ''} onChange={handleChange} className="input-style"></textarea></div><div><label className="label-style">No. Kad OKU (jika ada)</label><input type="text" name="okuCardNumber" value={formData.okuCardNumber || ''} onChange={handleChange} className="input-style"/></div><div className="border-t pt-4 mt-4"><label className="flex items-center gap-2 font-semibold"><input type="checkbox" name="agreeTerms" checked={!!formData.agreeTerms} onChange={handleChange} required/> Saya mengesahkan maklumat ini benar {requiredField}</label>{errors.agreeTerms && <p className="error-text mt-1">{errors.agreeTerms}</p>}</div></fieldset> )}
+                        </form>
+                        <div className="p-6 border-t flex justify-between items-center">
+                            <button onClick={prevStep} disabled={currentStep === 1} className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">Kembali</button>
+                            {currentStep < 4 && <button onClick={nextStep} className="btn-primary">Seterusnya</button>}
+                            {currentStep === 4 && <button onClick={handleSubmit} className="btn-primary bg-green-600 hover:bg-green-700">Hantar Permohonan</button>}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const FAQItem = ({ question, answer }) => ( <details className="card bg-white p-4 rounded-lg shadow-md cursor-pointer"><summary className="font-semibold text-gray-700 flex items-center gap-2"><HelpCircleIcon /> {question}</summary><p className="text-gray-600 mt-2 pl-8">{answer}</p></details> );
+        const ResultCard = ({ result, isModal }) => { const [showShare, setShowShare] = useState(false); const maskName = (name) => { const words = name.split(' '); return words.map(word => word.length <= 2 ? word : word[0] + '*'.repeat(word.length - 2) + word.slice(-1)).join(' '); }; const statusInfo = useMemo(() => { switch (result.status) { case 'LULUS': return { color: 'text-green-600', icon: <CheckCircleIcon className="w-6 h-6" /> }; case 'DALAM PROSES': return { color: 'text-yellow-600', icon: <ClockIcon className="w-6 h-6" /> }; case 'TIDAK LULUS': return { color: 'text-red-600', icon: <XCircleIcon className="w-6 h-6" /> }; default: return { color: 'text-gray-600', icon: null }; } }, [result.status]); return (<div className={`bg-white rounded-xl ${isModal ? '' : 'shadow-lg mt-6'} animate-fade-in print-container`}><div id="resultContainer" className="p-6 sm:p-8"><div className="space-y-4"><div className="flex items-start gap-4"><span className="text-gray-500 pt-1"><UserIcon /></span><div><p className="label-style">Nama Pemohon</p><p className="text-gray-800">{maskName(result.name)}</p></div></div><div className="flex items-start gap-4"><span className="text-gray-500 pt-1"><HashIcon /></span><div><p className="label-style">Nombor MyKad</p><p className="text-gray-800">{formatMyKad(result.mykad)}</p></div></div><div className="flex items-start gap-4"><span className={`${statusInfo.color} pt-1`}>{statusInfo.icon}</span><div><p className="label-style">Keputusan</p><p className={`font-bold text-lg ${statusInfo.color}`}>{result.status}</p><p className="text-gray-600 text-sm mt-1">{result.detail}</p></div></div></div></div><div className="border-t p-4 flex flex-wrap justify-end items-center gap-2 no-print"><button onClick={() => setShowShare(!showShare)} className="btn-secondary flex items-center gap-2"><ShareIcon /> Kongsi</button><button onClick={() => window.print()} className="btn-primary flex items-center gap-2"><PrinterIcon /> Cetak Keputusan</button></div>{showShare && <ShareToWhatsApp result={result} maskedName={maskName(result.name)} />}</div>); };
+        const ErrorMessage = ({ message, isModal }) => ( <div className={`bg-white rounded-xl ${isModal ? '' : 'shadow-lg mt-6'} p-6 sm:p-8 animate-fade-in text-center font-medium text-red-500 flex items-center justify-center gap-2`}><XCircleIcon className="w-5 h-5"/> {message}</div> );
+        const ShareToWhatsApp = ({ result, maskedName }) => { const [phone, setPhone] = useState('60'); const handleShare = () => { const message = `Keputusan Permohonan SPK/PPKI Pejabat Pendidikan Daerah Miri, Sarawak:\n\nNama: ${maskedName}\nNo. MyKad: ${formatMyKad(result.mykad)}\nKeputusan: ${result.status}\n\n${result.detail}\n\nUntuk maklumat lanjut, sila layari laman web rasmi.`; const encodedMessage = encodeURIComponent(message); window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank'); }; return (<div className="bg-gray-50 p-4 rounded-b-xl animate-fade-in"><label htmlFor="whatsapp-no" className="label-style mb-1">Nombor Telefon WhatsApp</label><div className="flex gap-2"><input id="whatsapp-no" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} className="input-style flex-grow" placeholder="Contoh: 60123456789"/><button onClick={handleShare} className="bg-green-500 hover:bg-green-600 text-white font-bold p-2 rounded-md transition-all flex items-center justify-center gap-2"><WhatsAppIcon /> Hantar</button></div></div>); };
+        
+        // --- KOMPONEN MODAL UNTUK KEPUTUSAN ---
+        const ResultModal = ({ result, onClose }) => {
+            if (!result) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in no-print backdrop-blur-sm" onClick={onClose}>
+                    <div className="w-full max-w-lg animate-modal-pop" onClick={(e) => e.stopPropagation()}>
+                        {result.error ? (
+                            <ErrorMessage message={result.error} isModal={true} />
+                        ) : (
+                            <ResultCard result={result} isModal={true} />
+                        )}
+                        <div className="mt-4 text-center">
+                            <button onClick={onClose} className="btn-secondary">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+        
+        function App() {
+            const [mykad, setMykad] = useState('');
+            const [recaptcha, setRecaptcha] = useState(false);
+            const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [result, setResult] = useState(null);
+            const [isFormOpen, setIsFormOpen] = useState(false);
+            
+            const handleMykadChange = (e) => {
+                const formatted = formatMyKad(e.target.value);
+                setMykad(formatted);
+                const digitsOnly = formatted.replace(/\D/g, '');
+                setError(digitsOnly.length > 0 && digitsOnly.length < 12 ? 'Nombor MyKad mesti 12 digit.' : '');
+            };
+            
+            const isFormValid = useMemo(() => mykad.replace(/\D/g, '').length === 12 && recaptcha, [mykad, recaptcha]);
+
+            const handleSubmitCheck = (e) => {
+                e.preventDefault();
+                if (!isFormValid) return;
+                setIsLoading(true);
+                setTimeout(() => {
+                    const record = fakeDatabase.find(item => item.mykad === mykad.replace(/\D/g, ''));
+                    setResult(record || { error: 'Maaf, maklumat tidak dijumpai.' });
+                    setIsLoading(false);
+                }, 1500);
+            };
+
+            return (
+                <React.Fragment>
+                    {isFormOpen && <ApplicationForm onClose={() => setIsFormOpen(false)} />}
+                    <ResultModal result={result} onClose={() => setResult(null)} />
+                    
+                    <main className="w-full max-w-lg">
+                        <div className="card bg-white rounded-xl shadow-lg p-6 sm:p-8 no-print">
+                            <div className="text-center mb-8">
+                                <div className="flex justify-center items-center gap-3">
+                                <FileCheckIcon />
+                                <h1 className="text-2xl sm:text-3xl font-bold">Semakan & Permohonan</h1>
+                                </div>
+                                <p className="text-gray-500 mt-1">SPK/ PPKI Pejabat Pendidikan Daerah Miri, Sarawak</p>
+                            </div>
+
+                            <form onSubmit={handleSubmitCheck} className="space-y-4">
+                                <div>
+                                    <label htmlFor="mykad" className="label-style">Nombor MyKad Pemohon</label>
+                                    <div className="relative">
+                                        <input type="text" id="mykad" value={mykad} onChange={handleMykadChange} className="input-style w-full pl-4 pr-10 py-2" placeholder="Contoh: 080101-01-1234" maxLength="14" />
+                                        {mykad && ( <button type="button" onClick={() => {setMykad(''); setError('');}} className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-gray-600"><XIcon /></button> )}
+                                    </div>
+                                    <p className="text-xs text-red-500 mt-1 h-4">{error}</p>
+                                </div>
+                                
+                                <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md border border-gray-200">
+                                    <div className="flex items-center space-x-2">
+                                        <input id="recaptcha" type="checkbox" checked={recaptcha} onChange={(e) => setRecaptcha(e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-gray-100" />
+                                        <label htmlFor="recaptcha" className="text-sm text-gray-700">Saya bukan robot</label>
+                                    </div>
+                                    <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="reCAPTCHA logo" className="h-8 w-8 opacity-50"/>
+                                </div>
+                                <button type="submit" disabled={!isFormValid || isLoading} className="w-full font-bold py-3 px-4 rounded-md transition-all flex items-center justify-center h-12 btn-primary">
+                                    {isLoading ? <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Semak Status'}
+                                </button>
+                            </form>
+
+                            <div className="text-center mt-6 border-t pt-4">
+                                <p className="text-sm text-gray-500">
+                                    Belum membuat permohonan?{' '}
+                                    <button onClick={() => setIsFormOpen(true)} className="group font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-200 focus:outline-none">
+                                        Klik di sini untuk Permohonan Baharu
+                                        <span className="block max-w-0 group-hover:max-w-full transition-all duration-300 h-0.5 bg-blue-500"></span>
+                                    </button>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="w-full max-w-lg mt-8 no-print space-y-2">
+                             <h2 className="text-lg font-bold text-center mb-4">Soalan Lazim (FAQ)</h2>
+                             <FAQItem question='Apa perlu dibuat selepas status "LULUS"?' answer="Tahniah! Anda boleh hadir ke Pejabat Pendidikan Daerah (PPD) Miri untuk mengambil surat tawaran rasmi. Sila bawa bersama salinan MyKad murid dan ibu/bapa." />
+                             <FAQItem question="Bagaimana jika maklumat tidak dijumpai?" answer="Pastikan anda memasukkan 12 digit Nombor MyKad dengan betul. Jika masalah berterusan, sila hubungi pihak urusetia di talian 085-XXXXXXX untuk bantuan." />
+                        </div>
+                    </main>
+
+                    <footer className="text-center mt-10 text-xs text-gray-500 w-full max-w-lg pb-8 no-print">
+                        <p> &copy; 2025 Unit Pendidikan Khas <br/> Pejabat Pendidikan Daerah Miri, Sarawak. All rights reserved. </p>
+                        <p>Website crafted by <a href="#" className="text-blue-600 hover:underline">Optimai Solution</a>.</p>
+                        <p>recode by <a href="https://t.me/mypahan" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Pahan</a></p>
+                    </footer>
+                </React.Fragment>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('app'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
