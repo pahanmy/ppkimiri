@@ -73,57 +73,150 @@
         const formatMyKad = (value) => { if (!value) return ''; const digitsOnly = value.replace(/\D/g, ''); if (digitsOnly.length <= 6) return digitsOnly; if (digitsOnly.length <= 8) return `${digitsOnly.slice(0, 6)}-${digitsOnly.slice(6)}`; return `${digitsOnly.slice(0, 6)}-${digitsOnly.slice(6, 8)}-${digitsOnly.slice(8, 12)}`; };
         
         // --- BORANG PERMOHONAN PROFESIONAL (MULTI-STEP) ---
-        const ApplicationForm = ({ onClose }) => { return (<div>Borang Permohonan</div>); };
+        const ApplicationForm = ({ onClose }) => {
+            const [currentStep, setCurrentStep] = useState(1);
+            const [formData, setFormData] = useState({ mykad: '' });
+            const [errors, setErrors] = useState({});
+            const [calculatedAge, setCalculatedAge] = useState(null);
 
-        // --- KOMPONEN KAD STATISTIK ---
-        const StatsCards = () => { const stats = [ { title: 'Jumlah Permohonan', value: '1,234', icon: <UsersIcon className="w-6 h-6"/>, color: 'blue' }, { title: 'Selesai Diproses', value: '987', icon: <ClipboardCheckIcon className="w-6 h-6"/>, color: 'orange' }, { title: 'Permohonan Lulus', value: '765', icon: <BadgeCheckIcon className="w-6 h-6"/>, color: 'green' } ]; const colorClasses = { blue: { bg: 'bg-blue-100', text: 'text-blue-600' }, orange: { bg: 'bg-orange-100', text: 'text-orange-600' }, green: { bg: 'bg-green-100', text: 'text-green-600' }, }; return (<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 no-print animate-fade-in">{stats.map(stat => (<div key={stat.title} className="bg-white rounded-xl shadow-md p-4 flex items-center space-x-4"><div className={`p-3 rounded-full ${colorClasses[stat.color].bg}`}><span className={`${colorClasses[stat.color].text}`}>{stat.icon}</span></div><div><p className="text-sm text-gray-500">{stat.title}</p><p className="text-2xl font-bold text-gray-800">{stat.value}</p></div></div>))}</div>); };
+            useEffect(() => {
+                const digitsOnly = formData.mykad.replace(/\D/g, '');
+                if (digitsOnly.length === 12) {
+                    const yearStr = digitsOnly.substring(0, 2);
+                    const monthStr = digitsOnly.substring(2, 4);
+                    const dayStr = digitsOnly.substring(4, 6);
+                    let year = parseInt(yearStr, 10);
+                    const currentCentury = Math.floor(new Date().getFullYear() / 100);
+                    year += (year + 1900 > new Date().getFullYear()) ? 1900 : 2000;
+                    
+                    const dob = new Date(year, parseInt(monthStr, 10) - 1, parseInt(dayStr, 10));
+                    if (dob && dob.getFullYear() === year && (dob.getMonth() + 1) === parseInt(monthStr, 10) && dob.getDate() === parseInt(dayStr, 10)) {
+                        const formattedDob = dob.toISOString().split('T')[0];
+                        let age = new Date().getFullYear() - dob.getFullYear();
+                        const m = new Date().getMonth() - dob.getMonth();
+                        if (m < 0 || (m === 0 && new Date().getDate() < dob.getDate())) age--;
+                        
+                        setCalculatedAge(age);
+                        setFormData(prev => ({ ...prev, dob: formattedDob }));
+                        if(errors.dob) setErrors(prev => ({...prev, dob: null}));
+                    } else {
+                         setCalculatedAge(null);
+                         setFormData(prev => ({...prev, dob: ''}));
+                    }
+                }
+            }, [formData.mykad]);
 
-        // --- KOMPONEN KEPUTUSAN ---
-        const ResultCard = ({ result, isModal }) => { const [showShare, setShowShare] = useState(false); const maskName = (name) => { const words = name.split(' '); return words.map(word => word.length <= 2 ? word : word[0] + '*'.repeat(word.length - 2) + word.slice(-1)).join(' '); }; const statusInfo = useMemo(() => { switch (result.status) { case 'LULUS': return { color: 'text-green-600', icon: <CheckCircleIcon className="w-6 h-6" /> }; case 'DALAM PROSES': return { color: 'text-yellow-600', icon: <ClockIcon className="w-6 h-6" /> }; case 'TIDAK LULUS': return { color: 'text-red-600', icon: <XCircleIcon className="w-6 h-6" /> }; default: return { color: 'text-gray-600', icon: null }; } }, [result.status]); return (<div className={`bg-white rounded-xl ${isModal ? '' : 'shadow-lg mt-6'} animate-fade-in print-container`}><div id="resultContainer" className="p-6 sm:p-8"><div className="space-y-4"><div className="flex items-start gap-4"><span className="text-gray-500 pt-1"><UserIcon /></span><div><p className="label-style">Nama Pemohon</p><p className="text-gray-800">{maskName(result.name)}</p></div></div><div className="flex items-start gap-4"><span className="text-gray-500 pt-1"><HashIcon /></span><div><p className="label-style">Nombor MyKad</p><p className="text-gray-800">{formatMyKad(result.mykad)}</p></div></div><div className="flex items-start gap-4"><span className={`${statusInfo.color} pt-1`}>{statusInfo.icon}</span><div><p className="label-style">Keputusan</p><p className={`font-bold text-lg ${statusInfo.color}`}>{result.status}</p><p className="text-gray-600 text-sm mt-1">{result.detail}</p></div></div></div></div><div className="border-t p-4 flex flex-wrap justify-end items-center gap-2 no-print"><button onClick={() => setShowShare(!showShare)} className="btn-secondary flex items-center gap-2"><ShareIcon /> Kongsi</button><button onClick={() => window.print()} className="btn-primary flex items-center gap-2"><PrinterIcon /> Cetak Keputusan</button></div>{showShare && <ShareToWhatsApp result={result} maskedName={maskName(result.name)} />}</div>); };
-        const ErrorMessage = ({ message, isModal }) => ( <div className={`bg-white rounded-xl ${isModal ? '' : 'shadow-lg mt-6'} p-6 sm:p-8 animate-fade-in text-center font-medium text-red-500 flex items-center justify-center gap-2`}><XCircleIcon className="w-5 h-5"/> {message}</div> );
-        const ShareToWhatsApp = ({ result, maskedName }) => { const [phone, setPhone] = useState('60'); const handleShare = () => { const message = `Keputusan Permohonan SPK/PPKI Pejabat Pendidikan Daerah Miri, Sarawak:\n\nNama: ${maskedName}\nNo. MyKad: ${formatMyKad(result.mykad)}\nKeputusan: ${result.status}\n\n${result.detail}\n\nUntuk maklumat lanjut, sila layari laman web rasmi.`; const encodedMessage = encodeURIComponent(message); window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank'); }; return (<div className="bg-gray-50 p-4 rounded-b-xl animate-fade-in"><label htmlFor="whatsapp-no" className="label-style mb-1">Nombor Telefon WhatsApp</label><div className="flex gap-2"><input id="whatsapp-no" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} className="input-style flex-grow" placeholder="Contoh: 60123456789"/><button onClick={handleShare} className="bg-green-500 hover:bg-green-600 text-white font-bold p-2 rounded-md transition-all flex items-center justify-center gap-2"><WhatsAppIcon /> Hantar</button></div></div>); };
-        const FAQItem = ({ question, answer }) => ( <details className="card bg-white p-4 rounded-lg shadow-md cursor-pointer"><summary className="font-semibold text-gray-700 flex items-center gap-2"><HelpCircleIcon /> {question}</summary><p className="text-gray-600 mt-2 pl-8">{answer}</p></details> );
+            const handleChange = (e) => {
+                const { name, value, type, checked } = e.target;
+                setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+                if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
+            };
+            
+            const handleMyKadChange = (e) => {
+                const formatted = formatMyKad(e.target.value);
+                setFormData(prev => ({...prev, mykad: formatted}));
+                if (errors.mykad) setErrors(prev => ({...prev, mykad: null}));
+            }
 
-        const ResultModal = ({ result, onClose }) => { if (!result) return null; return (<div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in no-print backdrop-blur-sm" onClick={onClose}><div className="w-full max-w-lg animate-modal-pop" onClick={(e) => e.stopPropagation()}>{result.error ? (<ErrorMessage message={result.error} isModal={true} />) : (<ResultCard result={result} isModal={true} />)}<div className="mt-4 text-center"><button onClick={onClose} className="btn-secondary">Tutup</button></div></div></div>); };
-        
-        const AdminLoginModal = ({ onClose }) => {
-            const [code, setCode] = useState('');
-            const [error, setError] = useState('');
+            const validateStep = () => {
+                const newErrors = {};
+                const requiredFields = {
+                    1: ['studentName', 'mykad', 'dob', 'gender', 'appliedSchool', 'eduLevel'],
+                    2: ['parentName', 'relationship', 'phone', 'email'],
+                    3: ['diagnosis', 'selfCare', 'allergies', 'specialAids', 'tantrumFrequency', 'socialInteraction'],
+                    4: ['docOku', 'docMykid', 'docParentIc', 'agreeTerms']
+                };
+                
+                requiredFields[currentStep]?.forEach(field => {
+                    if (field === 'mykad' && formData.mykad.replace(/\D/g, '').length !== 12) {
+                        newErrors[field] = 'Sila masukkan 12 digit No. MyKad.';
+                    } else if (!formData[field]) {
+                        newErrors[field] = 'Medan ini diperlukan.';
+                    }
+                });
+                
+                if (currentStep === 4) {
+                    if (!formData.docOku || !formData.docMykid || !formData.docParentIc) newErrors.docs = 'Sila tandakan semua dokumen yang diperlukan.';
+                    if (!formData.agreeTerms) newErrors.agreeTerms = 'Anda mesti bersetuju dengan terma & syarat.';
+                }
 
-            const handleLogin = () => {
-                if (code.toLowerCase() === 'pahan') {
-                    window.location.href = 'admin.html';
-                } else {
-                    setError('Kod admin tidak sah. Sila cuba lagi.');
+                setErrors(newErrors);
+                return Object.keys(newErrors).length === 0;
+            };
+
+            const nextStep = () => { if (validateStep()) setCurrentStep(prev => prev + 1); };
+            const prevStep = () => setCurrentStep(prev => prev - 1);
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (validateStep()) {
+                    const finalData = { ...formData, mykad: formData.mykad.replace(/\D/g, '') };
+                    console.log("Data Permohonan Dihantar:", finalData);
+                    alert("Permohonan anda telah berjaya dihantar.");
+                    onClose();
                 }
             };
 
+            const requiredField = <span className="text-red-500">*</span>;
+            const steps = ["Pelajar", "Penjaga", "Kesihatan", "Pengesahan"];
+
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in no-print backdrop-blur-sm" onClick={onClose}>
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm animate-modal-pop" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-6">
-                            <h2 className="text-lg font-bold text-center">Log Masuk Admin</h2>
-                            <p className="text-sm text-gray-500 text-center mt-1">Sila masukkan kod laluan untuk akses.</p>
-                            <div className="mt-4">
-                                <label htmlFor="admin-code" className="label-style">Kod Admin</label>
-                                <input 
-                                    type="password"
-                                    id="admin-code"
-                                    value={code}
-                                    onChange={(e) => setCode(e.target.value)}
-                                    className="input-style w-full text-center"
-                                />
-                                {error && <p className="error-text text-center">{error}</p>}
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in no-print backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+                        <div className="p-6 border-b">
+                             <div className="flex justify-between items-center"><h2 className="text-xl font-bold">Borang Permohonan PPKI</h2><button onClick={onClose} className="text-gray-500 hover:text-gray-800"><XIcon /></button></div>
+                             <div className="mt-4">
+                                <div className="flex items-center">
+                                    {steps.map((step, index) => (
+                                        <React.Fragment key={step}>
+                                            <div className="flex items-center">
+                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${currentStep > index ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+                                                    {currentStep > index + 1 ? <CheckCircleIcon className="w-5 h-5"/> : index + 1}
+                                                </div>
+                                                <p className={`ml-2 font-semibold ${currentStep >= index + 1 ? 'text-blue-600' : 'text-gray-500'}`}>{step}</p>
+                                            </div>
+                                            {index < steps.length - 1 && <div className={`flex-auto border-t-2 transition-all duration-300 mx-4 ${currentStep > index + 1 ? 'border-blue-600' : 'border-gray-200'}`}></div>}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                        <div className="bg-gray-50 px-6 py-3 flex justify-end gap-3 rounded-b-xl">
-                            <button onClick={onClose} className="btn-secondary">Batal</button>
-                            <button onClick={handleLogin} className="btn-primary">Masuk</button>
+                        <form className="overflow-y-auto p-6 flex-grow">
+                            {currentStep === 1 && (
+                                <fieldset className="space-y-4 animate-fade-in">
+                                    <legend className="form-legend">Maklumat Pelajar</legend>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div><label className="label-style">Nama Penuh Pelajar {requiredField}</label><input type="text" name="studentName" value={formData.studentName || ''} onChange={handleChange} required className={`input-style ${errors.studentName && 'border-red-500'}`} />{errors.studentName && <p className="error-text">{errors.studentName}</p>}</div>
+                                        <div><label className="label-style">Kad Pengenalan {requiredField}</label><input type="text" name="mykad" value={formData.mykad} maxLength="14" onChange={handleMyKadChange} required className={`input-style ${errors.mykad && 'border-red-500'}`} placeholder="Contoh: 080101-01-1234" />{errors.mykad && <p className="error-text">{errors.mykad}</p>}</div>
+                                        <div><label className="label-style">Tarikh Lahir Pelajar {requiredField}</label><input type="date" name="dob" value={formData.dob || ''} onChange={handleChange} required className={`input-style ${errors.dob && 'border-red-500'}`} readOnly />{calculatedAge !== null && <p className="text-sm text-green-600 mt-1 font-medium">Umur: {calculatedAge} tahun</p>}{errors.dob && <p className="error-text">{errors.dob}</p>}</div>
+                                        <div><label className="label-style">Jantina {requiredField}</label><div className="flex-container"><label><input type="radio" name="gender" value="Lelaki" checked={formData.gender === 'Lelaki'} onChange={handleChange}/> Lelaki</label><label><input type="radio" name="gender" value="Perempuan" onChange={handleChange}/> Perempuan</label></div>{errors.gender && <p className="error-text">{errors.gender}</p>}</div>
+                                        <div><label className="label-style">Sekolah Dipohon {requiredField}</label><select name="appliedSchool" value={formData.appliedSchool || ''} onChange={handleChange} required className={`input-style ${errors.appliedSchool && 'border-red-500'}`}><option value="">Pilih sekolah</option><option>SK MIRI</option><option>SMK LUTONG</option></select>{errors.appliedSchool && <p className="error-text">{errors.appliedSchool}</p>}</div>
+                                        <div><label className="label-style">Peringkat Persekolahan {requiredField}</label><input type="text" name="eduLevel" value={formData.eduLevel || ''} onChange={handleChange} required className={`input-style ${errors.eduLevel && 'border-red-500'}`} />{errors.eduLevel && <p className="error-text">{errors.eduLevel}</p>}</div>
+                                    </div>
+                                </fieldset>
+                            )}
+                            {currentStep === 2 && ( <fieldset className="space-y-4 animate-fade-in"><legend className="form-legend">Maklumat Ibu Bapa / Penjaga</legend><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="label-style">Nama Penuh {requiredField}</label><input type="text" name="parentName" value={formData.parentName || ''} onChange={handleChange} required className={`input-style ${errors.parentName && 'border-red-500'}`} />{errors.parentName && <p className="error-text">{errors.parentName}</p>}</div><div><label className="label-style">Hubungan {requiredField}</label><div className="flex-container"><label><input type="radio" name="relationship" value="Ibu" checked={formData.relationship === 'Ibu'} onChange={handleChange}/> Ibu</label><label><input type="radio" name="relationship" value="Bapa" onChange={handleChange}/> Bapa</label><label><input type="radio" name="relationship" value="Penjaga" onChange={handleChange}/> Penjaga</label></div>{errors.relationship && <p className="error-text">{errors.relationship}</p>}</div><div><label className="label-style">No. Telefon {requiredField}</label><input type="tel" name="phone" value={formData.phone || ''} onChange={handleChange} required className={`input-style ${errors.phone && 'border-red-500'}`} />{errors.phone && <p className="error-text">{errors.phone}</p>}</div><div><label className="label-style">E-mel {requiredField}</label><input type="email" name="email" value={formData.email || ''} onChange={handleChange} required className={`input-style ${errors.email && 'border-red-500'}`} />{errors.email && <p className="error-text">{errors.email}</p>}</div></div></fieldset> )}
+                            {currentStep === 3 && ( <fieldset className="space-y-4 animate-fade-in"><legend className="form-legend">Maklumat Kesihatan & Keadaan Murid</legend><div><label className="label-style">Diagnosis/Keperluan Khas {requiredField}</label><textarea name="diagnosis" value={formData.diagnosis || ''} onChange={handleChange} required className={`input-style ${errors.diagnosis && 'border-red-500'}`}></textarea>{errors.diagnosis && <p className="error-text">{errors.diagnosis}</p>}</div><div><label className="label-style">Pengurusan Diri {requiredField}</label><select name="selfCare" value={formData.selfCare || ''} onChange={handleChange} required className={`input-style ${errors.selfCare && 'border-red-500'}`}><option value="">Pilih tahap</option><option>Boleh</option><option>Tidak Boleh</option><option>Sebahagian</option></select>{errors.selfCare && <p className="error-text">{errors.selfCare}</p>}</div><div><label className="label-style">Alahan/Masalah Kesihatan {requiredField}</label><textarea name="allergies" value={formData.allergies || ''} onChange={handleChange} required className={`input-style ${errors.allergies && 'border-red-500'}`}></textarea>{errors.allergies && <p className="error-text">{errors.allergies}</p>}</div><div><label className="label-style">Alat Bantuan Khas {requiredField}</label><textarea name="specialAids" value={formData.specialAids || ''} onChange={handleChange} required className={`input-style ${errors.specialAids && 'border-red-500'}`}></textarea>{errors.specialAids && <p className="error-text">{errors.specialAids}</p>}</div><div><label className="label-style">Kekerapan Tantrum {requiredField}</label><select name="tantrumFrequency" value={formData.tantrumFrequency || ''} onChange={handleChange} required className={`input-style ${errors.tantrumFrequency && 'border-red-500'}`}><option value="">Pilih kekerapan</option><option>Jarang</option><option>Kadang-kadang</option><option>Kerap</option></select>{errors.tantrumFrequency && <p className="error-text">{errors.tantrumFrequency}</p>}</div><div><label className="label-style">Interaksi Sosial {requiredField}</label><select name="socialInteraction" value={formData.socialInteraction || ''} onChange={handleChange} required className={`input-style ${errors.socialInteraction && 'border-red-500'}`}><option value="">Pilih tahap</option><option>Baik</option><option>Sederhana</option><option>Kurang</option></select>{errors.socialInteraction && <p className="error-text">{errors.socialInteraction}</p>}</div></fieldset> )}
+                            {currentStep === 4 && ( <fieldset className="space-y-4 animate-fade-in"><legend className="form-legend">Dokumen & Pengesahan</legend><div><p className="label-style">Dokumen Sokongan (Bawa semasa temuduga) {requiredField}</p>{errors.docs && <p className="error-text">{errors.docs}</p>}<div className="mt-2 space-y-2"><label className="flex items-center gap-2"><input type="checkbox" name="docOku" checked={!!formData.docOku} onChange={handleChange}/> Salinan Borang/Kad OKU</label><label className="flex items-center gap-2"><input type="checkbox" name="docMykid" checked={!!formData.docMykid} onChange={handleChange}/> Salinan Mykid/Sijil Lahir</label><label className="flex items-center gap-2"><input type="checkbox" name="docParentIc" checked={!!formData.docParentIc} onChange={handleChange}/> Salinan K/P Ibu/Bapa/Penjaga</label></div></div><div><label className="label-style">Maklumat Tambahan</label><textarea name="additionalInfo" value={formData.additionalInfo || ''} onChange={handleChange} className="input-style"></textarea></div><div><label className="label-style">No. Kad OKU (jika ada)</label><input type="text" name="okuCardNumber" value={formData.okuCardNumber || ''} onChange={handleChange} className="input-style"/></div><div className="border-t pt-4 mt-4"><label className="flex items-center gap-2 font-semibold"><input type="checkbox" name="agreeTerms" checked={!!formData.agreeTerms} onChange={handleChange} required/> Saya mengesahkan maklumat ini benar {requiredField}</label>{errors.agreeTerms && <p className="error-text mt-1">{errors.agreeTerms}</p>}</div></fieldset> )}
+                        </form>
+                        <div className="p-6 border-t flex justify-between items-center">
+                            <button onClick={prevStep} disabled={currentStep === 1} className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed">Kembali</button>
+                            {currentStep < 4 && <button onClick={nextStep} className="btn-primary">Seterusnya</button>}
+                            {currentStep === 4 && <button onClick={handleSubmit} className="btn-primary bg-green-600 hover:bg-green-700">Hantar Permohonan</button>}
                         </div>
                     </div>
                 </div>
             );
         };
+
+        const FAQItem = ({ question, answer }) => ( <details className="card bg-white p-4 rounded-lg shadow-md cursor-pointer"><summary className="font-semibold text-gray-700 flex items-center gap-2"><HelpCircleIcon /> {question}</summary><p className="text-gray-600 mt-2 pl-8">{answer}</p></details> );
+        const ResultCard = ({ result, isModal }) => { const [showShare, setShowShare] = useState(false); const maskName = (name) => { const words = name.split(' '); return words.map(word => word.length <= 2 ? word : word[0] + '*'.repeat(word.length - 2) + word.slice(-1)).join(' '); }; const statusInfo = useMemo(() => { switch (result.status) { case 'LULUS': return { color: 'text-green-600', icon: <CheckCircleIcon className="w-6 h-6" /> }; case 'DALAM PROSES': return { color: 'text-yellow-600', icon: <ClockIcon className="w-6 h-6" /> }; case 'TIDAK LULUS': return { color: 'text-red-600', icon: <XCircleIcon className="w-6 h-6" /> }; default: return { color: 'text-gray-600', icon: null }; } }, [result.status]); return (<div className={`bg-white rounded-xl ${isModal ? '' : 'shadow-lg mt-6'} animate-fade-in print-container`}><div id="resultContainer" className="p-6 sm:p-8"><div className="space-y-4"><div className="flex items-start gap-4"><span className="text-gray-500 pt-1"><UserIcon /></span><div><p className="label-style">Nama Pemohon</p><p className="text-gray-800">{maskName(result.name)}</p></div></div><div className="flex items-start gap-4"><span className="text-gray-500 pt-1"><HashIcon /></span><div><p className="label-style">Nombor MyKad</p><p className="text-gray-800">{formatMyKad(result.mykad)}</p></div></div><div className="flex items-start gap-4"><span className={`${statusInfo.color} pt-1`}>{statusInfo.icon}</span><div><p className="label-style">Keputusan</p><p className={`font-bold text-lg ${statusInfo.color}`}>{result.status}</p><p className="text-gray-600 text-sm mt-1">{result.detail}</p></div></div></div></div><div className="border-t p-4 flex flex-wrap justify-end items-center gap-2 no-print"><button onClick={() => setShowShare(!showShare)} className="btn-secondary flex items-center gap-2"><ShareIcon /> Kongsi</button><button onClick={() => window.print()} className="btn-primary flex items-center gap-2"><PrinterIcon /> Cetak Keputusan</button></div>{showShare && <ShareToWhatsApp result={result} maskedName={maskName(result.name)} />}</div>); };
+        const ErrorMessage = ({ message, isModal }) => ( <div className={`bg-white rounded-xl ${isModal ? '' : 'shadow-lg mt-6'} p-6 sm:p-8 animate-fade-in text-center font-medium text-red-500 flex items-center justify-center gap-2`}><XCircleIcon className="w-5 h-5"/> {message}</div> );
+        const ShareToWhatsApp = ({ result, maskedName }) => { const [phone, setPhone] = useState('60'); const handleShare = () => { const message = `Keputusan Permohonan SPK/PPKI Pejabat Pendidikan Daerah Miri, Sarawak:\n\nNama: ${maskedName}\nNo. MyKad: ${formatMyKad(result.mykad)}\nKeputusan: ${result.status}\n\n${result.detail}\n\nUntuk maklumat lanjut, sila layari laman web rasmi.`; const encodedMessage = encodeURIComponent(message); window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank'); }; return (<div className="bg-gray-50 p-4 rounded-b-xl animate-fade-in"><label htmlFor="whatsapp-no" className="label-style mb-1">Nombor Telefon WhatsApp</label><div className="flex gap-2"><input id="whatsapp-no" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} className="input-style flex-grow" placeholder="Contoh: 60123456789"/><button onClick={handleShare} className="bg-green-500 hover:bg-green-600 text-white font-bold p-2 rounded-md transition-all flex items-center justify-center gap-2"><WhatsAppIcon /> Hantar</button></div></div>); };
+        
+        const ResultModal = ({ result, onClose }) => { if (!result) return null; return (<div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in no-print backdrop-blur-sm" onClick={onClose}><div className="w-full max-w-lg animate-modal-pop" onClick={(e) => e.stopPropagation()}>{result.error ? (<ErrorMessage message={result.error} isModal={true} />) : (<ResultCard result={result} isModal={true} />)}<div className="mt-4 text-center"><button onClick={onClose} className="btn-secondary">Tutup</button></div></div></div>); };
+        
+        const AdminLoginModal = ({ onClose }) => { const [code, setCode] = useState(''); const [error, setError] = useState(''); const handleLogin = () => { if (code.toLowerCase() === 'pahan') { window.location.href = 'admin.html'; } else { setError('Kod admin tidak sah.'); } }; return ( <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in no-print backdrop-blur-sm" onClick={onClose}><div className="bg-white rounded-xl shadow-2xl w-full max-w-sm animate-modal-pop" onClick={(e) => e.stopPropagation()}><div className="p-6"><h2 className="text-lg font-bold text-center">Log Masuk Admin</h2><p className="text-sm text-gray-500 text-center mt-1">Sila masukkan kod laluan.</p><div className="mt-4"><label htmlFor="admin-code" className="label-style">Kod Admin</label><input type="password" id="admin-code" value={code} onChange={(e) => setCode(e.target.value)} className="input-style w-full text-center" />{error && <p className="error-text text-center">{error}</p>}</div></div><div className="bg-gray-50 px-6 py-3 flex justify-end gap-3 rounded-b-xl"><button onClick={onClose} className="btn-secondary">Batal</button><button onClick={handleLogin} className="btn-primary">Masuk</button></div></div></div> ); };
 
         function App() {
             const [mykad, setMykad] = useState('');
@@ -152,6 +245,37 @@
                     setResult(record || { error: 'Maaf, maklumat tidak dijumpai.' });
                     setIsLoading(false);
                 }, 1500);
+            };
+            
+            // --- KOMPONEN KAD STATISTIK ---
+            const StatsCards = () => {
+                const stats = [
+                    { title: 'Jumlah Permohonan', value: '1,234', icon: <UsersIcon className="w-6 h-6"/>, color: 'blue' },
+                    { title: 'Selesai Diproses', value: '987', icon: <ClipboardCheckIcon className="w-6 h-6"/>, color: 'orange' },
+                    { title: 'Permohonan Lulus', value: '765', icon: <BadgeCheckIcon className="w-6 h-6"/>, color: 'green' }
+                ];
+
+                const colorClasses = {
+                    blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
+                    orange: { bg: 'bg-orange-100', text: 'text-orange-600' },
+                    green: { bg: 'bg-green-100', text: 'text-green-600' },
+                };
+
+                return (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 no-print animate-fade-in">
+                        {stats.map(stat => (
+                            <div key={stat.title} className="bg-white rounded-xl shadow-md p-4 flex items-center space-x-4">
+                                <div className={`p-3 rounded-full ${colorClasses[stat.color].bg}`}>
+                                    <span className={`${colorClasses[stat.color].text}`}>{stat.icon}</span>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">{stat.title}</p>
+                                    <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
             };
 
             return (
