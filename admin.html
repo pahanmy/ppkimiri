@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin: Pengurusan Permohonan PPKI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles & Animations */
+        html { scroll-behavior: smooth; }
+        body { background-color: #f7f9fc; } /* Latar belakang biru lembut */
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-pop-in { animation: popIn 0.3s ease-out; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center min-h-screen p-4 sm:p-6 font-sans text-gray-800">
+
+    <!-- App Root Container -->
+    <div id="app" class="w-full">
+        <!-- Application Content Will Be Rendered Here by React -->
+    </div>
+
+    <!-- React and ReactDOM Scripts -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel Script for JSX Transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // --- IKON SVG ---
+        const HomeIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>;
+        const CheckCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>;
+        const XCircleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>;
+        const AlertTriangleIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>;
+        const EyeIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>;
+        const XIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
+        const ArchiveIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 2 L8 2 L8 7 L16 7 Z" /><path d="M12 11 L12 13" /></svg>;
+        const ClockIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10" /><path d="M12 6 L12 12 L16 14" /></svg>;
+
+        // --- PANGKALAN DATA SIMULASI (LEBIH LENGKAP) ---
+        const fakeDatabase = [
+            { id: 1, name: "ADAM BIN ABDULLAH", mykad: "180115101234", status: "Baru", applicationDate: "2025-10-05", parentName: "ABDULLAH BIN AHMAD", phone: "012-3456789", diagnosis: "Autism Spectrum Disorder (ASD)" },
+            { id: 2, name: "NUR AMELIA BINTI KHAIRUL", mykad: "180320055678", status: "Baru", applicationDate: "2025-10-03", parentName: "KHAIRUL BIN ISMAIL", phone: "019-8765432", diagnosis: "Attention Deficit Hyperactivity Disorder (ADHD)" },
+            { id: 3, name: "MUHAMMAD ZAFRAN BIN ISMAIL", mykad: "180205149012", status: "Baru", applicationDate: "2025-10-01", parentName: "ISMAIL BIN JAAFAR", phone: "013-1234567", diagnosis: "Dyslexia" },
+            { id: 4, name: "SITI AISHAH BINTI RAZALI", mykad: "180511013456", status: "Lulus", applicationDate: "2025-09-29", parentName: "RAZALI BIN ALI", phone: "014-7654321", diagnosis: "Down Syndrome" },
+            { id: 5, name: "AHMAD ISKANDAR MIKAIL", mykad: "180708130099", status: "Gagal", applicationDate: "2025-09-28", parentName: "MIKAIL BIN MUSA", phone: "016-9876543", diagnosis: "Cerebral Palsy" },
+            { id: 6, name: "FATIMAH BINTI ZAHAR", mykad: "181122081122", status: "Tidak Lengkap", applicationDate: "2025-09-15", parentName: "ZAHAR BIN YUSOF", phone: "017-1122334", diagnosis: "Global Developmental Delay (GDD)" },
+        ];
+
+        // --- FUNGSI BANTUAN ---
+        const formatMyKad = (value) => {
+            if (!value) return '';
+            const digitsOnly = value.replace(/\D/g, '');
+            if (digitsOnly.length <= 6) return digitsOnly;
+            if (digitsOnly.length <= 8) return `${digitsOnly.slice(0, 6)}-${digitsOnly.slice(6)}`;
+            return `${digitsOnly.slice(0, 6)}-${digitsOnly.slice(6, 8)}-${digitsOnly.slice(8, 12)}`;
+        };
+
+        // --- MODAL SEMAK MAKLUMAT ---
+        const ApplicationModal = ({ application, onClose }) => {
+            if (!application) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in backdrop-blur-sm" onClick={onClose}>
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg animate-pop-in" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6 border-b flex justify-between items-center">
+                            <h2 className="text-xl font-bold text-gray-800">Maklumat Permohonan</h2>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition-colors"><XIcon className="w-6 h-6" /></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div><p className="text-sm font-semibold text-gray-500">Nama Murid</p><p className="text-lg text-gray-900">{application.name}</p></div>
+                            <div><p className="text-sm font-semibold text-gray-500">No. MyKid</p><p className="text-lg text-gray-900 font-mono">{formatMyKad(application.mykad)}</p></div>
+                            <div><p className="text-sm font-semibold text-gray-500">Tarikh Permohonan</p><p className="text-lg text-gray-900">{application.applicationDate}</p></div>
+                             <div><p className="text-sm font-semibold text-gray-500">Nama Penjaga</p><p className="text-lg text-gray-900">{application.parentName}</p></div>
+                              <div><p className="text-sm font-semibold text-gray-500">No. Telefon</p><p className="text-lg text-gray-900">{application.phone}</p></div>
+                               <div><p className="text-sm font-semibold text-gray-500">Diagnosis/Keperluan</p><p className="text-lg bg-gray-100 p-2 rounded-md text-gray-900">{application.diagnosis}</p></div>
+                        </div>
+                        <div className="p-4 bg-gray-50 rounded-b-xl text-right">
+                             <button onClick={onClose} className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition-all">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- KOMPONEN PAPARAN ADMIN ---
+        const AdminDashboard = () => {
+            const [applications, setApplications] = useState(fakeDatabase);
+            const [showSuccess, setShowSuccess] = useState(false);
+            const [successMessage, setSuccessMessage] = useState("");
+            const [filters, setFilters] = useState({
+                search: '',
+                month: new Date().getMonth() + 1, // Bulan semasa
+                year: new Date().getFullYear(), // Tahun semasa
+            });
+            const [selectedApp, setSelectedApp] = useState(null);
+
+            const handleStatusChange = (id, newStatus) => {
+                setApplications(currentApplications => 
+                    currentApplications.map(app => 
+                        app.id === id ? { ...app, status: newStatus } : app
+                    )
+                );
+            };
+            
+            const handleFilterChange = (e) => {
+                const { name, value } = e.target;
+                setFilters(prev => ({...prev, [name]: value}));
+            };
+
+            const filteredApplications = useMemo(() => {
+                return applications.filter(app => {
+                    const appDate = new Date(app.applicationDate);
+                    const searchMatch = app.mykad.replace(/-/g, '').includes(filters.search.replace(/-/g, ''));
+                    const monthMatch = filters.month ? (appDate.getMonth() + 1) == filters.month : true;
+                    const yearMatch = filters.year ? appDate.getFullYear() == filters.year : true;
+                    return searchMatch && monthMatch && yearMatch;
+                });
+            }, [applications, filters]);
+
+            const analysis = useMemo(() => {
+                const completed = filteredApplications.filter(app => ['Lulus', 'Gagal', 'Tidak Lengkap'].includes(app.status)).length;
+                const pending = filteredApplications.filter(app => app.status === 'Baru').length;
+                return { completed, pending };
+            }, [filteredApplications]);
+
+
+            const handleConfirm = () => {
+                console.log("Keputusan disahkan:", filteredApplications);
+                setSuccessMessage("Semua keputusan telah berjaya disahkan!");
+                setShowSuccess(true);
+                setTimeout(() => setShowSuccess(false), 3000);
+            };
+            
+            const StatusBadge = ({ status }) => {
+                const statusClasses = {
+                    'Baru': 'bg-gray-200 text-gray-800',
+                    'Lulus': 'bg-green-100 text-green-800',
+                    'Tidak Lengkap': 'bg-yellow-100 text-yellow-800',
+                    'Gagal': 'bg-red-100 text-red-800',
+                };
+                return <span className={`px-3 py-1 text-sm font-medium rounded-full ${statusClasses[status] || 'bg-gray-100'}`}>{status}</span>;
+            };
+
+            const ActionButton = ({ onClick, children, className, icon }) => (
+                <button onClick={onClick} className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-white rounded-lg shadow-md transition-all transform hover:scale-105 hover:shadow-lg ${className}`}>
+                    {icon} {children}
+                </button>
+            );
+
+            return (
+                 <div className="w-full max-w-7xl mx-auto animate-fade-in">
+                    <ApplicationModal application={selectedApp} onClose={() => setSelectedApp(null)} />
+                    
+                    {/* [DIUBAH SUAI] Kedudukan Butang Home */}
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-800">Dashboard Admin Semakan & Permohonan</h1>
+                        <p className="text-gray-500 mt-1">SPK/ PPKI Pejabat Pendidikan Daerah Miri, Sarawak</p>
+                        
+                        <a href="werb/index.html" className="mt-4 inline-flex items-center gap-2 bg-white hover:bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-colors border border-gray-200 shadow-sm">
+                            <HomeIcon className="w-5 h-5" />
+                            <span>Halaman Utama</span>
+                        </a>
+                    </div>
+
+                    {/* Bahagian Analisis & Penapisan */}
+                    <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                        <h2 className="text-xl font-bold text-gray-700 mb-4">Analisis Bulanan</h2>
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-blue-50 p-4 rounded-lg flex items-center gap-4 border border-blue-200">
+                                <div className="bg-blue-500 p-3 rounded-full text-white"><ArchiveIcon className="w-6 h-6"/></div>
+                                <div><p className="text-gray-600">Selesai Diproses</p><p className="text-2xl font-bold text-blue-900">{analysis.completed}</p></div>
+                            </div>
+                             <div className="bg-orange-50 p-4 rounded-lg flex items-center gap-4 border border-orange-200">
+                                <div className="bg-orange-500 p-3 rounded-full text-white"><ClockIcon className="w-6 h-6"/></div>
+                                <div><p className="text-gray-600">Belum Selesai</p><p className="text-2xl font-bold text-orange-900">{analysis.pending}</p></div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                             <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Cari No. MyKid</label>
+                                <input type="text" name="search" placeholder="Cth: 180115101234" value={filters.search} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"/>
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Bulan</label>
+                                <select name="month" value={filters.month} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+                                    {[...Array(12).keys()].map(i => <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString('ms-MY', { month: 'long' })}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Tahun</label>
+                                <select name="year" value={filters.year} onChange={handleFilterChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+                                    <option value="2025">2025</option>
+                                    <option value="2024">2024</option>
+                                    <option value="2023">2023</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full bg-white">
+                                <thead className="border-b-2 border-gray-200">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Bil.</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Nama Murid</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">No. MyKid</th>
+                                        <th className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-center text-xs font-bold text-gray-600 uppercase tracking-wider">Tindakan</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {filteredApplications.length > 0 ? filteredApplications.map((app, index) => (
+                                        <tr key={app.id} className="hover:bg-gray-50 transition-colors duration-200">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{index + 1}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{app.name}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{formatMyKad(app.mykad)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center"><StatusBadge status={app.status} /></td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center flex justify-center items-center gap-2">
+                                                <button onClick={() => setSelectedApp(app)} title="Semak Maklumat" className="p-2 text-gray-500 hover:text-blue-600 bg-gray-100 hover:bg-blue-100 rounded-full transition-all"><EyeIcon className="w-5 h-5"/></button>
+                                                <ActionButton onClick={() => handleStatusChange(app.id, 'Lulus')} className="bg-green-500 hover:bg-green-600" icon={<CheckCircleIcon className="w-4 h-4"/>}>Lulus</ActionButton>
+                                                <ActionButton onClick={() => handleStatusChange(app.id, 'Tidak Lengkap')} className="bg-yellow-500 hover:bg-yellow-600" icon={<AlertTriangleIcon className="w-4 h-4"/>}>Tidak Lengkap</ActionButton>
+                                                <ActionButton onClick={() => handleStatusChange(app.id, 'Gagal')} className="bg-red-500 hover:bg-red-600" icon={<XCircleIcon className="w-4 h-4"/>}>Gagal</ActionButton>
+                                            </td>
+                                        </tr>
+                                    )) : (
+                                        <tr><td colSpan="5" className="text-center py-10 text-gray-500">Tiada permohonan dijumpai.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+                            <h2 className="text-lg font-semibold text-gray-800">Pengesahan Tindakan</h2>
+                            <p className="text-sm text-gray-500 mt-1">Sila pastikan semua status permohonan telah dikemas kini dengan betul.</p>
+                            <button onClick={handleConfirm} disabled={filteredApplications.length === 0} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-base px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                Sahkan Keputusan
+                            </button>
+                             {showSuccess && <div className="mt-4 text-green-600 font-semibold animate-fade-in flex items-center justify-center gap-2"><CheckCircleIcon className="w-5 h-5" />{successMessage}</div>}
+                        </div>
+                    </div>
+                 </div>
+            );
+        };
+
+        function App() {
+            return (
+                <React.Fragment>
+                    <AdminDashboard />
+                    <footer className="text-center mt-10 text-xs text-gray-500 w-full max-w-lg pb-8">
+                        <p> &copy; 2025 Unit Pendidikan Khas <br/> Pejabat Pendidikan Daerah Miri, Sarawak. All rights reserved. </p>
+                        <p>Website crafted by <a href="#" className="text-blue-600 hover:underline">Optimai Solution</a>.</p>
+                        <p>recode by <a href="https://t.me/mypahan" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Pahan</a></p>
+                    </footer>
+                </React.Fragment>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('app'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
+
