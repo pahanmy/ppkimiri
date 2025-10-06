@@ -8,6 +8,7 @@
     <style>
         /* Custom Styles & Animations */
         html { scroll-behavior: smooth; }
+        body { background-color: #f8fafc; } /* Latar belakang kelabu lembut */
         .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-modal-pop { animation: modalPop 0.3s ease-out; }
@@ -32,7 +33,7 @@
         }
     </style>
 </head>
-<body class="bg-white flex flex-col items-center justify-center min-h-screen p-4 font-sans text-gray-800">
+<body class="bg-gray-50 flex flex-col items-center min-h-screen p-4 font-sans text-gray-800">
 
     <!-- App Root Container -->
     <div id="app">
@@ -60,6 +61,9 @@
         const XIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>;
         const ShareIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>;
         const WhatsAppIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-white"><path d="M16.75 13.96c.25.13.43.2.5.28.07.08.15.38.18.87a1.43 1.43 0 0 1-.5 1.2c-.24.2-.6.38-1.13.52s-1.13.2-3.38-.62c-2.25-.82-3.83-2.4-3.96-2.58-.13-.18-.88-1.15-.88-2.18s.55-1.5.75-1.7c.2-.2.43-.25.6-.25s.3.05.43.05c.13.02.28.02.4.22.12.2.48.97.52 1.05.04.08.07.18.02.28s-.13.25-.28.43c-.15.18-.28.3-.4.43-.12.13-.25.28-.13.52s.43.9.95 1.58c.75.97 1.43 1.3 1.63 1.43.2.13.3.1.43-.05s.55-.65.7-1.1c.15-.45.3-1 .5-1.13s.43-.15.7-.02zM12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg>;
+        const UsersIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+        const ClipboardCheckIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>;
+        const BadgeCheckIcon = ({className}) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3.85 8.62a4 4 0 0 1 4.78-4.78l1.21 1.22a4 4 0 0 0 5.66 0l1.21-1.22a4 4 0 0 1 4.78 4.78l-1.21 1.22a4 4 0 0 0 0 5.66l1.21 1.22a4 4 0 0 1-4.78 4.78l-1.21-1.22a4 4 0 0 0-5.66 0l-1.21 1.22a4 4 0 0 1-4.78-4.78l1.21-1.22a4 4 0 0 0 0-5.66z"/><path d="m9 12 2 2 4-4"/></svg>;
         
         // --- PANGKALAN DATA SIMULASI ---
         const fakeDatabase = [
@@ -219,26 +223,49 @@
         const ErrorMessage = ({ message, isModal }) => ( <div className={`bg-white rounded-xl ${isModal ? '' : 'shadow-lg mt-6'} p-6 sm:p-8 animate-fade-in text-center font-medium text-red-500 flex items-center justify-center gap-2`}><XCircleIcon className="w-5 h-5"/> {message}</div> );
         const ShareToWhatsApp = ({ result, maskedName }) => { const [phone, setPhone] = useState('60'); const handleShare = () => { const message = `Keputusan Permohonan SPK/PPKI Pejabat Pendidikan Daerah Miri, Sarawak:\n\nNama: ${maskedName}\nNo. MyKad: ${formatMyKad(result.mykad)}\nKeputusan: ${result.status}\n\n${result.detail}\n\nUntuk maklumat lanjut, sila layari laman web rasmi.`; const encodedMessage = encodeURIComponent(message); window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank'); }; return (<div className="bg-gray-50 p-4 rounded-b-xl animate-fade-in"><label htmlFor="whatsapp-no" className="label-style mb-1">Nombor Telefon WhatsApp</label><div className="flex gap-2"><input id="whatsapp-no" type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} className="input-style flex-grow" placeholder="Contoh: 60123456789"/><button onClick={handleShare} className="bg-green-500 hover:bg-green-600 text-white font-bold p-2 rounded-md transition-all flex items-center justify-center gap-2"><WhatsAppIcon /> Hantar</button></div></div>); };
         
-        // --- KOMPONEN MODAL UNTUK KEPUTUSAN ---
         const ResultModal = ({ result, onClose }) => {
             if (!result) return null;
-
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 z-50 animate-fade-in no-print backdrop-blur-sm" onClick={onClose}>
                     <div className="w-full max-w-lg animate-modal-pop" onClick={(e) => e.stopPropagation()}>
-                        {result.error ? (
-                            <ErrorMessage message={result.error} isModal={true} />
-                        ) : (
-                            <ResultCard result={result} isModal={true} />
-                        )}
-                        <div className="mt-4 text-center">
-                            <button onClick={onClose} className="btn-secondary">Tutup</button>
-                        </div>
+                        {result.error ? (<ErrorMessage message={result.error} isModal={true} />) : (<ResultCard result={result} isModal={true} />)}
+                        <div className="mt-4 text-center"><button onClick={onClose} className="btn-secondary">Tutup</button></div>
                     </div>
                 </div>
             );
         };
         
+        // --- KOMPONEN KAD STATISTIK ---
+        const StatsCards = () => {
+            const stats = [
+                { title: 'Jumlah Permohonan', value: '1,234', icon: <UsersIcon className="w-6 h-6"/>, color: 'blue' },
+                { title: 'Selesai Diproses', value: '987', icon: <ClipboardCheckIcon className="w-6 h-6"/>, color: 'orange' },
+                { title: 'Permohonan Lulus', value: '765', icon: <BadgeCheckIcon className="w-6 h-6"/>, color: 'green' }
+            ];
+
+            const colorClasses = {
+                blue: { bg: 'bg-blue-100', text: 'text-blue-600' },
+                orange: { bg: 'bg-orange-100', text: 'text-orange-600' },
+                green: { bg: 'bg-green-100', text: 'text-green-600' },
+            };
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 no-print animate-fade-in">
+                    {stats.map(stat => (
+                        <div key={stat.title} className="bg-white rounded-xl shadow-md p-4 flex items-center space-x-4">
+                            <div className={`p-3 rounded-full ${colorClasses[stat.color].bg}`}>
+                                <span className={`${colorClasses[stat.color].text}`}>{stat.icon}</span>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500">{stat.title}</p>
+                                <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        };
+
         function App() {
             const [mykad, setMykad] = useState('');
             const [recaptcha, setRecaptcha] = useState(false);
@@ -272,7 +299,9 @@
                     {isFormOpen && <ApplicationForm onClose={() => setIsFormOpen(false)} />}
                     <ResultModal result={result} onClose={() => setResult(null)} />
                     
-                    <main className="w-full max-w-lg">
+                    <main className="w-full max-w-2xl">
+                        <StatsCards />
+
                         <div className="card bg-white rounded-xl shadow-lg p-6 sm:p-8 no-print">
                             <div className="text-center mb-8">
                                 <div className="flex justify-center items-center gap-3">
@@ -315,7 +344,7 @@
                             </div>
                         </div>
 
-                        <div className="w-full max-w-lg mt-8 no-print space-y-2">
+                        <div className="w-full mt-8 no-print space-y-2">
                              <h2 className="text-lg font-bold text-center mb-4">Soalan Lazim (FAQ)</h2>
                              <FAQItem question='Apa perlu dibuat selepas status "LULUS"?' answer="Tahniah! Anda boleh hadir ke Pejabat Pendidikan Daerah (PPD) Miri untuk mengambil surat tawaran rasmi. Sila bawa bersama salinan MyKad murid dan ibu/bapa." />
                              <FAQItem question="Bagaimana jika maklumat tidak dijumpai?" answer="Pastikan anda memasukkan 12 digit Nombor MyKad dengan betul. Jika masalah berterusan, sila hubungi pihak urusetia di talian 085-XXXXXXX untuk bantuan." />
